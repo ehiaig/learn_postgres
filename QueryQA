@@ -1,0 +1,225 @@
+1. List the titles of the films an actor has acted in .
+---- Answer ----
+select actor.first_name, film.title FROM film_actor
+JOIN actor ON(film_actor.actor_id = actor.actor_id)
+JOIN film ON(film_actor.film_id = film.film_id);
+
+OR
+select concat(first_name, ' ',last_name)as name, title, release_year from film_actor fa
+join actor a on (a.actor_id = fa.actor_id)
+join film f on(f.film_id = fa.film_id);
+
+2. How many films has an actor acted in List all movie films.
+---- Answer ----
+select actor_id, count(actor_id) FROM film_actor GROUP BY actor_id ORDER BY count DESC;
+
+OR
+
+SELECT first_name, last_name, count(film.title) from actor
+JOIN film_actor ON (film_actor.actor_id = actor.actor_id)
+JOIN film ON (film.film_id = film_actor.film_id) GROUP BY actor.actor_id ORDER BY count DESC;
+
+3. Find the film that have a rental rate in 2.99 , the rating is R , release year is 2006,
+the title starts with Vertigo.
+---- Answer ----
+
+SELECT title FROM film
+WHERE rental_rate = 2.99
+AND rating = 'R'
+AND release_year = 2006
+AND title LIKE 'Vertigo%';
+
+4. List films with the following columns: title, release year, language, rating
+where the language is english, release year is between 1950-2005 ordered by year from the most recent to old.
+---- Answer ----
+
+SELECT title, release_year, language, rating FROM film
+JOIN language ON (language.name = 'English')
+WHERE release_year BETWEEN 1950 AND 2005
+ORDER BY release_year DESC;
+
+5. What are the movies that are rented?
+---- Answer ----
+
+SELECT title, rental_rate FROM film WHERE rental_rate > 0.00;
+
+6. Where are the movies that are not rented?
+---- Answer ----
+SELECT title FROM film f WHERE f.film_id NOT IN (SELECT DISTINCT film_id FROM inventory i
+JOIN rental r ON (r.inventory_id=i.inventory_id));
+
+7. How many movies are not rented?
+---- Answer ----
+SELECT COUNT(f.film_id) FROM film f WHERE f.film_id NOT IN (SELECT DISTINCT film_id FROM inventory i
+JOIN rental r ON (r.inventory_id=i.inventory_id));
+
+8. The lowest and highest length of any film.
+---- Answer ----
+SELECT MIN (length), MAX (length) FROM film;
+
+OR
+(select title, length from film order by length desc limit 1) union all
+ (select title, length from film order by length asc limit 1);
+
+ --- This gives the maximum and minimum length of the films----
+SELECT title, MIN (length), MAX (length)
+FROM film
+GROUP BY title, length;
+
+9. List all staff that live in Canada.
+****** Answer ******
+
+SELECT first_name, address, country FROM staff, address, city, country
+WHERE staff.address_id = address.address_id AND address.city_id = city.city_id
+AND city.country_id = country.country_id AND country.country = 'Canada';
+
+10. What is the most popular film category?
+****** Answer ******
+
+select name, count(name) from category
+JOIN film_category ON (film_category.category_id = category.category_id)
+GROUP BY name ORDER BY count DESC limit 1;
+
+11. List all languages and how many films each one has.
+****** Answer ******
+select name, count(film.language_id) from language
+JOIN film on film.language_id = language.language_id group by language.name;
+
+12. What are the first four cities where the customers rent more movie films?.
+****** Answer ******
+
+SELECT city, COUNT(*) FROM rental r JOIN customer c ON (c.customer_id=r.customer_id)
+JOIN address a ON (a.address_id=c.address_id) JOIN city ON (city.city_id=a.city_id)
+GROUP BY city ORDER BY COUNT DESC LIMIT 4;
+
+13. How much has each store earned renting movie films?
+****** Answer ******
+SELECT store_id, SUM(amount) FROM payment
+JOIN staff ON (staff.staff_id = payment.staff_id) GROUP BY store_id;
+
+14. Who is the newest customer?
+****** Answer ******
+SELECT * FROM customer ORDER BY customer_id DESC LIMIT 1;
+
+15.Return the full names (first and last) of actors with “SON” in their last name,
+ordered by their first name
+****** Answer ******
+Select CONCAT(first_name,' ',last_name) as full names FROM actor
+WHERE last_name LIKE '%son%' ORDER BY first_name;
+
+16. Who is the oldest customer?
+****** Answer ******
+select first_name,create_date from customer order by create_date desc limit 1;
+
+17. The average of rental for all customers
+****** Answer ******
+SELECT AVG(amount) FROM payment;
+
+18. Find all the addresses where the second address is not empty (i.e., contains some text),
+and return these second addresses sorted.
+****** Answer ******
+SELECT address FROM address WHERE address2 IS NOT NULL ORDER BY address2;
+
+19. Return the first and last names of actors who played in a film involving a
+“Crocodile” and a “Shark”, along with the release year of the movie, sorted by the actors’ last names.
+
+****** Answer ******
+SELECT first_name, last_name, release_year FROM film_actor
+JOIN actor ON(actor.actor_id = film_actor.actor_id)
+JOIN film ON(film.film_id = film_actor.film_id)
+WHERE description LIKE '%Crocodile%’ AND description LIKE ‘%Shark%’
+ORDER BY last_name;
+
+20. How many films involve a “Crocodile” and a “Shark”?
+****** Answer ******
+
+SELECT count(description) FROM film WHERE description LIKE ‘%Crocodile% AND description LIKE ‘%Shark%’
+
+21. Find all the film categories in which there are between 55 and 65 films.
+Return the names of these categories and the number of films per category, sorted by the number of films.
+
+****** Answer ******
+SELECT category, count(*) AS films_count
+FROM film_list
+GROUP BY category HAVING count(*)
+BETWEEN 55 AND 65 ORDER BY films_count;
+
+OR
+
+SELECT name, count(name) FROM film_category
+JOIN category ON (category.category_id = film_category.category_id)
+GROUP BY name
+HAVING count(name)
+BETWEEN 55 AND 65;
+
+OR
+
+SELECT name, count(category.category_id) FROM category
+JOIN film_category ON (film_category.category_id = category.category_id)
+GROUP BY (category.category_id)
+HAVING count(category.category_id)>55 AND count(category.category_id)<65;
+
+22. In how many film categories is the average difference between the film replacement cost and the rental rate larger than 17?
+
+****** Answer ******
+SELECT count(*)
+FROM foo (
+SELECT category.name AS category,
+avg(film.replacement_cost) AS cost,
+avg(film.rental_rate) AS rate,
+avg(film.replacement_cost)-avg(film.rental_rate) AS DIFFERENCE
+FROM film_category INNER
+JOIN film ON (film_category.film_id=film.film_id) INNER
+JOIN category ON (category.category_id=film_category.category_id)
+GROUP BY (category.category_id) HAVING avg(film.replacement_cost) - avg(film.rental_rate)>17 AS foo);
+
+23. Print the last 10 movies rented, who rented them and rental date
+********** Answer ************
+- rental has inventory_id, customer_id, rental_date
+- customer has customer_id, first_name, last_name
+- inventory has inventory_id, film_id
+- film has film_id, title
+
+SELECT CONCAT(first_name,' ',last_name) as renter_name, title, rental_date FROM rental
+JOIN customer ON (customer.customer_id = rental.customer_id)
+JOIN inventory ON (inventory.inventory_id = rental.inventory_id)
+JOIN film ON (film.film_id = inventory.film_id)
+ORDER BY rental_date DESC LIMIT 10;
+
+24. Get the last 15 customers who have paid less than $5.50 for a rental and the movie they rented.
+************ Answer ******************
+- We're printing customer name, amount paid, movie title
+payment has customer_id, rental_id, payment_id, amount, payment_date
+customer has customer_id, first_name, last_name
+rental has customer_id, inventory_id
+inventory has film_id, inventory_id
+film has film_id, title
+
+SELECT CONCAT(first_name,' ',last_name) as renter_name, title, amount from payment
+join rental on (payment.rental_id = rental.rental_id)
+join customer on (customer.customer_id = rental.customer_id)
+join inventory on (rental.inventory_id = inventory.inventory_id)
+join film on (inventory.film_id = film.film_id)
+where (payment.amount < 5.50)
+ORDER BY payment_date DESC LIMIT 10;
+
+
+25. Find the customers who has taken out the most movies:
+A: By number of movies has taken
+B: By amount from payment table
+
+- count the films a customer has taken, select the max
+- customer has customer_id, first_name, last_name
+- rental has customer_id, inventory_id, rental_id
+- payment: has amount, customer_id, rental_id, payment_id
+- inventory has film_id, inventory_id, store_id,
+- film: has rental_rate, film_id
+
+select CONCAT(customer.first_name,' ',customer.last_name) as customer_name, count(film_id) as no_of_times from film
+join rental on (rental.rental_id == customer.customer_id)
+join inventory on (rental.inventory_id = inventory.inventory_id)
+join customer on (customer.customer_id == rental.inventory_id)
+where max(payment.amount)
+group by customer.customer_id
+ORDER BY no_of_times DESC LIMIT 1;
+

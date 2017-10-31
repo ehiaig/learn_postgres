@@ -1,0 +1,17 @@
+To connect to database
+1. conn = pyscopg2.connect(database = 'database name',
+                               user = 'user',
+                               password='password',
+                               host=host,
+                               port=port)
+
+2. cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+3. cur.execute("""select* from table;""")
+4. results = cur.fetchone() or cur.fetchall()
+    for row in results:
+        print (row)
+
+# Fetchall() and fetchone() works only for select query
+
+5. cur.close()
+6. conn.commit() #This ensures the insert query sends the data to the database
